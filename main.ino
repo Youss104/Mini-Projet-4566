@@ -3,6 +3,17 @@
 #include <ESP32Servo.h>
 #include <DHT.h>
 
+#define BLYNK_TEMPLATE_ID "TMPL2_CS6H2Gv"
+#define BLYNK_TEMPLATE_NAME "Smart Parking System"
+#define BLYNK_AUTH_TOKEN "E1fbU-_XMXK705xXVS58LufiSPyPTd9U" // Ton vrai token ici
+
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+
+char ssid[] = "ESP32_Hotspot";   // Nom du réseau depuis Wi-Fi Options
+char pass[] = "esp32test";       // Mot de passe que tu as défini
+
 //-----------------------------------
 //         CONFIGURATIONS
 //-----------------------------------
@@ -49,6 +60,8 @@ float temperature = 0.0;
 void setup() {
   Serial.begin(115200);
   
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+
   // LCD Initialization
   lcd.init();
   lcd.backlight();
@@ -74,6 +87,7 @@ void setup() {
 }
 
 void loop() {
+  Blynk.run();
   handleEntry();
   handleExit();
   updateParkingSlots();
@@ -108,6 +122,17 @@ void updateParkingSlots() {
   for(int i=0; i<6; i++) {
     slots[i] = isSlotOccupied(irPins[i]);
   }
+  Blynk.virtualWrite(V8, countFreeSlots()); // Nombre de places libres sur V8
+  // Mise à jour des LED dans Blynk pour chaque slot
+  Blynk.virtualWrite(V1, slots[0] ? 1 : 0);  // Slot 1
+  Blynk.virtualWrite(V2, slots[1] ? 1 : 0);  // Slot 2
+  Blynk.virtualWrite(V3, slots[2] ? 1 : 0);  // Slot 3
+  Blynk.virtualWrite(V4, slots[3] ? 1 : 0);  // Slot 4
+  Blynk.virtualWrite(V5, slots[4] ? 1 : 0);  // Slot 5
+  Blynk.virtualWrite(V6, slots[5] ? 1 : 0);  // Slot 6
+
+  // Mise à jour du nombre de places libres
+  Blynk.virtualWrite(V7, countFreeSlots());
 }
 
 int countFreeSlots() {
@@ -134,6 +159,7 @@ void checkTemperature() {
     
     lastTempCheck = millis();
   }
+  Blynk.virtualWrite(V9, temperature); // Température sur V0
 }
 
 void emergencyOpen() {
